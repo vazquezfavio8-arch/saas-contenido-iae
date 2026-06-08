@@ -11,22 +11,36 @@
       --bg: #f4f4f4;
       --card-bg: #ffffff;
       --text: #333333;
+      --border: #e0e0e0;
     }
     
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-    body { background-color: var(--bg); color: var(--text); padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-    .container { background: var(--card-bg); padding: 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); width: 100%; max-width: 500px; text-align: center; }
+    body { background-color: var(--bg); color: var(--text); padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+    .container { background: var(--card-bg); padding: 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); width: 100%; max-width: 550px; text-align: center; margin-bottom: 20px; }
     h1 { font-size: 24px; margin-bottom: 8px; color: #1a1a1a; }
     p.subtitle { font-size: 14px; color: #666; margin-bottom: 24px; }
     .form-group { text-align: left; margin-bottom: 20px; }
-    label { font-size: 12px; font-weight: bold; uppercase; color: #555; display: block; margin-bottom: 8px; letter-spacing: 0.5px; }
-    select, input[type="file"] { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background: #fafafa; outline: none; }
-    select:focus { border-color: var(--primary); }
-    button { width: 100%; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 25px; font-size: 15px; font-weight: bold; cursor: pointer; transition: background 0.2s; margin-top: 10px; }
-    button:hover { background: var(--primary-hover); }
-    button:disabled { background: #ccc; cursor: not-allowed; }
+    label { font-size: 12px; font-weight: bold; text-transform: uppercase; color: #555; display: block; margin-bottom: 8px; letter-spacing: 0.5px; }
+    select, input[type="file"], textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: #fafafa; outline: none; font-family: inherit; }
+    select:focus, textarea:focus { border-color: var(--primary); background: #fff; }
+    textarea { resize: vertical; min-height: 80px; }
+    
+    .btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+    button { width: 100%; color: white; border: none; padding: 14px; border-radius: 25px; font-size: 14px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+    .btn-main { background: var(--primary); }
+    .btn-main:hover { background: var(--primary-hover); }
+    .btn-secondary { background: #4a4a4a; }
+    .btn-secondary:hover { background: #333333; }
+    button:disabled { background: #ccc !important; cursor: not-allowed; }
+    
     .status { margin-top: 15px; font-size: 13px; color: #666; display: none; }
     .status-text { display: inline-block; animation: pulse 1.5s infinite; }
+    
+    /* Panel de Resultados */
+    .result-container { background: var(--card-bg); padding: 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); width: 100%; max-width: 550px; display: none; text-align: left; margin-bottom: 30px; }
+    .result-header { font-size: 17px; font-weight: bold; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid var(--primary); color: #1a1a1a; }
+    .result-content { font-size: 14px; line-height: 1.6; color: #444; white-space: pre-wrap; background: #fafafa; padding: 15px; border-radius: 8px; border: 1px solid var(--border); }
+    
     @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
   </style>
 </head>
@@ -34,7 +48,7 @@
 
   <div class="container">
     <h1>Contenido Express</h1>
-    <p class="subtitle">Sube la foto de tu producto y Gemini hará el resto</p>
+    <p class="subtitle">Optimiza tus productos y genera estrategias comerciales con IA</p>
     
     <div class="form-group">
       <label for="tipoNegocio">TIPO DE NEGOCIO</label>
@@ -45,29 +59,47 @@
         <option value="Estética y Cuidado Personal">Estética y Cuidado Personal</option>
       </select>
     </div>
+
+    <div class="form-group">
+      <label for="instruccionesExtra">INSTRUCCIONES ADICIONALES o CAMBIOS (OPCIONAL)</label>
+      <textarea id="instruccionesExtra" placeholder="Ej: Usa tono juvenil, menciona 20% de descuento, o pide detalles específicos para la modelo..."></textarea>
+    </div>
     
     <div class="form-group">
       <label for="fotoProducto">FOTO DEL PRODUCTO</label>
       <input type="file" id="fotoProducto" accept="image/*">
     </div>
     
-    <button id="btnGenerar">✦ Generar Contenido Comercial</button>
+    <div class="btn-group">
+      <button id="btnGenerar" class="btn-main">✦ Generar Contenido Comercial</button>
+      <button id="btnPrompts" class="btn-secondary">📸 Crear Prompts para Modelos (IA Visual)</button>
+    </div>
     
     <div id="statusArea" class="status">
       <span class="status-text" id="statusMessage">Optimizando imagen... ⏳</span>
     </div>
   </div>
 
+  <div id="resultContainer" class="result-container">
+    <div id="resultHeader" class="result-header">🚀 Resultados Generados</div>
+    <div id="resultOutput" class="result-content"></div>
+  </div>
+
   <script>
     const fotoProducto = document.getElementById('fotoProducto');
     const tipoNegocio = document.getElementById('tipoNegocio');
+    const instruccionesExtra = document.getElementById('instruccionesExtra');
     const btnGenerar = document.getElementById('btnGenerar');
+    const btnPrompts = document.getElementById('btnPrompts');
     const statusArea = document.getElementById('statusArea');
     const statusMessage = document.getElementById('statusMessage');
+    const resultContainer = document.getElementById('resultContainer');
+    const resultHeader = document.getElementById('resultHeader');
+    const resultOutput = document.getElementById('resultOutput');
 
     let base64Procesado = null;
 
-    // Lógica integrada para comprimir imágenes pesadas tomadas con el cel al vuelo
+    // Compresión nativa en cliente para mitigar picos de carga pesada
     fotoProducto.addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -75,6 +107,8 @@
       statusArea.style.display = 'block';
       statusMessage.innerText = 'Optimizando dimensiones de imagen... 📸';
       btnGenerar.disabled = true;
+      btnPrompts.disabled = true;
+      resultContainer.style.display = 'none';
 
       const reader = new FileReader();
       reader.readAsDataURL(file);
@@ -85,7 +119,6 @@
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
 
-          // Resolución máxima equilibrada (Full HD estándar) para análisis visual óptimo
           const MAX_WIDTH = 1200;
           const MAX_HEIGHT = 1200;
           let width = img.width;
@@ -107,55 +140,65 @@
           canvas.height = height;
           ctx.drawImage(img, 0, 0, width, height);
 
-          // Compresión de calidad al 75% en formato JPEG para destruir el exceso de peso muerto
           const dataUrlComprimida = canvas.toDataURL('image/jpeg', 0.75);
           base64Procesado = dataUrlComprimida.split(',')[1];
 
           statusArea.style.display = 'none';
           btnGenerar.disabled = false;
+          btnPrompts.disabled = false;
         };
       };
     });
 
-    // Envío de datos al Backend en Vercel
-    btnGenerar.addEventListener('click', async () => {
+    async function enviarPeticion(tipoSolicitud) {
       if (!base64Procesado) {
         alert('Por favor, selecciona una foto primero.');
         return;
       }
 
       statusArea.style.display = 'block';
-      statusMessage.innerText = 'Analizando imagen y redactando propuestas analíticas... 🐻';
       btnGenerar.disabled = true;
+      btnPrompts.disabled = true;
+      resultContainer.style.display = 'none';
+
+      if (tipoSolicitud === 'texto') {
+        statusMessage.innerText = 'Analizando producto y redactando copys comerciales... ⏳';
+        resultHeader.innerText = '🚀 Copys y Estrategia de Contenido';
+      } else {
+        statusMessage.innerText = 'Diseñando 5 prompts estructurados para modelos fotográficas... 📸';
+        resultHeader.innerText = '🖼️ Prompts Estructurados para Generadores Visuales (IA)';
+      }
 
       try {
         const response = await fetch('/api/generar', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             imagenBase64: base64Procesado,
-            tipoNegocio: tipoNegocio.value
+            tipoNegocio: tipoNegocio.value,
+            instrucciones: instruccionesExtra.value,
+            modo: tipoSolicitud
           })
         });
 
         const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error en el servidor.');
 
-        if (!response.ok) {
-          throw new Error(data.error || 'Error desconocido en el servidor.');
-        }
-
-        // Aquí puedes renderizar el resultado directamente en tu HTML. Por simplicidad usamos alert temporal.
-        alert("¡Contenido Generado con Éxito!\n\n" + data.resultado);
+        resultOutput.innerText = data.resultado;
+        resultContainer.style.display = 'block';
+        resultContainer.scrollIntoView({ behavior: 'smooth' });
 
       } catch (error) {
         alert(error.message);
       } finally {
         statusArea.style.display = 'none';
         btnGenerar.disabled = false;
+        btnPrompts.disabled = false;
       }
-    });
+    }
+
+    btnGenerar.addEventListener('click', () => enviarPeticion('texto'));
+    btnPrompts.addEventListener('click', () => enviarPeticion('prompts_visuales'));
   </script>
 </body>
-      </html>
+</html>
