@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Creador de Contenido Local IA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    :root {
+      --bg: #FDFBF7;
+      --card: #ffffff;
+      --border: #E8DDD0;
+      --text: #2C3E50;
+      --muted: #7A8A95;
+      --accent: #4A7A9B;
+      --success: #25D366;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 1.5rem;
+      min-height: 100vh;
+    }
+
+    header {
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 0.3rem;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 12px rgba(44, 62, 80, 0.03);
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--muted);
+    }
+
+    select, input[type="file"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      font-family: inherit;
+      font-size: 0.95rem;
+      color: var(--text);
+      outline: none;
+      margin-bottom: 1.2rem;
+    }
+
+    .upload-box {
+      border: 2px dashed var(--border);
+      padding: 2rem;
+      text-align: center;
+      border-radius: 12px;
+      cursor: pointer;
+      background: var(--bg);
+      margin-bottom: 1.2rem;
+      transition: border-color 0.2s;
+    }
+
+    .upload-box:hover {
+      border-color: var(--accent);
+    }
+
+    .preview-img {
+      width: 100%;
+      max-height: 250px;
+      object-fit: cover;
+      border-radius: 8px;
+      display: none;
+      margin-top: 0.5rem;
+      border: 1px solid var(--border);
+    }
+
+    button {
+      width: 100%;
+      padding: 16px;
+      background: var(--text);
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: var(--accent);
+    }
+
+    button:disabled {
+      background: var(--border);
+      cursor: not-allowed;
+    }
+
+    #output {
+      display: none;
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+
+    #output h3 {
+      margin-top: 1.5rem;
+      font-size: 1.1rem;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.3rem;
+    }
+
+    #output ul {
+      padding-left: 1.2rem;
+      margin: 0.5rem 0;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+      padding: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Contenido Express</h1>
+    <p>Sube la foto de tu producto y Gemini hará el resto</p>
+  </header>
+
+  <div class="card">
+    <label for="tipoNegocio">Tipo de Negocio</label>
+    <select id="tipoNegocio">
+      <option value="Tienda de Ropa / Moda">Tienda de Ropa / Moda</option>
+      <option value="Gastronomía / Comida">Gastronomía / Comida</option>
+      <option value="Accesorios / Joyería">Accesorios / Joyería</option>
+      <option value="Estética / Belleza">Estética / Belleza</option>
+      <option value="General / Otro">Otro rubro</option>
+    </select>
+
+    <label>Foto del Producto</label>
+    <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+      <span id="uploadText">📸 Seleccionar imagen desde el celular</span>
+      <input type="file" id="fileInput" accept="image/jpeg, image/png" style="display: none;" onchange="procesarImagen(event)">
+      <img id="preview" class="preview-img" alt="Vista previa">
+    </div>
+
+    <button id="btnGenerar" onclick="enviarAGemini()" disabled>✦ Generar Contenido Comercial</button>
+  </div>
+
+  <div id="loading" class="loading">Analizando imagen y redactando propuestas analíticas... 🧸</div>
+
+  <div id="output" class="card"></div>
+
+  <script>
+    let base64String = "";
+
+    function procesarImagen(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = document.getElementById('preview');
+        img.src = e.target.result;
+        img.style.display = 'block';
+        document.getElementById('uploadText').style.display = 'none';
+        
+        // Extraer solo la cadena base64 limpia sin el encabezado data:image/...
+        base64String = e.target.result.split(',')[1];
+        document.getElementById('btnGenerar').disabled = false;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function enviarAGemini() {
+      const btn = document.getElementById('btnGenerar');
+      const loading = document.getElementById('loading');
+      const output = document.getElementById('output');
+      const tipoNegocio = document.getElementById('tipoNegocio').value;
+
+      btn.disabled = true;
+      loading.style.display = 'block';
+      output.style.display = 'none';
+
+      try {
+        const respuesta = await fetch('/api/generar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            imagenBase64: base64String,
+            tipoNegocio: tipoNegocio
+          })
+        });
+
+        const datos = await respuesta.json();
+
+        if (datos.error) {
+          alert('Error: ' + datos.error);
+        } else {
+          // Usamos una librería simple integrada o formato básico de conversión de Markdown rudimentario
+          output.innerHTML = formatearRespuesta(datos.resultado);
+          output.style.display = 'block';
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Hubo un problema al conectar con el backend de Vercel.');
+      } finally {
+        btn.disabled = false;
+        loading.style.display = 'none';
+      }
+    }
+
+    // Convertidor ultra simple de Markdown a HTML para mantener las secciones limpias
+    function formatearRespuesta(texto) {
+      return texto
+        .replace(/### (.*)/g, '<h3>$1</h3>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/\* (.*)/g, '<li>$1</li>');
+    }
+  </script>
+</body>
+</html>
