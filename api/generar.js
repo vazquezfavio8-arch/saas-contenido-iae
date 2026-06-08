@@ -9,9 +9,11 @@ module.exports = async function handler(req, res) {
 
   try {
     const { imagenBase64, tipoNegocio, instrucciones, modo } = req.body;
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     
-    // Modelo estable definido correctamente
+    // Inicialización con tu API Key
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY.trim());
+    
+    // Usamos el modelo "gemini-1.5-flash" de manera explícita
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     let prompt = modo === 'prompts_visuales' 
@@ -25,8 +27,10 @@ module.exports = async function handler(req, res) {
       { inlineData: { mimeType: "image/jpeg", data: imagenBase64 } }
     ]);
 
-    res.status(200).json({ resultado: result.response.text() });
+    const response = await result.response;
+    res.status(200).json({ resultado: response.text() });
   } catch (error) {
+    console.error('Error detallado:', error);
     res.status(500).json({ error: error.message });
   }
 };
