@@ -1,15 +1,7 @@
 {
   "name": "saas-contenido-local-ia",
   "version": "1.0.0",
-  "type": "module",
   "dependencies": {
     "@google/genai": "^0.1.1"
-  },
-  "vercel": {
-    "functions": {
-      "api/*.js": {
-        "runtime": "nodejs18.x"
-      }
-    }
   }
 }
