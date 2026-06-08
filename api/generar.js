@@ -1,8 +1,8 @@
-import { GoogleGenAI } from '@google/genai';
+const { GoogleGenAI } = require('@google/genai');
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método no permitido' });
   }
@@ -54,4 +54,4 @@ export default async function handler(req, res) {
     console.error(error);
     return res.status(500).json({ error: 'Error interno en el servidor' });
   }
-}
+};
